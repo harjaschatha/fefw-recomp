@@ -14,9 +14,10 @@
 namespace nxrt::ft {
 
 extern std::atomic<bool> g_on;
-inline bool on() { return g_on.load(std::memory_order_relaxed); }
+inline bool on() { return g_on.load(std::memory_order_acquire); }
 
 uint64_t now_ns();                         // monotonic, same base as FrameLimiter::now_ns
+bool recording();                          // trace is enabled and inside its configured capture window
 uint16_t zone_id(const char* name);        // registers a name once (static local at each site)
 void event(uint16_t zone, uint64_t t0, uint64_t t1, uint32_t arg = 0);
 void mark(const char* name, uint32_t arg = 0);

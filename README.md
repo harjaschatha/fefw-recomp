@@ -48,6 +48,9 @@ game runs through Proton: Play needs Steam with a Proton installed, [umu-launche
 press **Add to Steam** on the Play page and start it from Steam (also in the Steam Deck's Game Mode). After an update, run Set up in
 the launcher (Desktop Mode on a Deck) before playing from Steam.
 
+For repeatable Steam Deck performance, temperature and power logs, see the
+[Deck benchmark workflow](tools/deck/README.md).
+
 ### Settings
 
 The launcher's **Settings** page covers resolution, frame rate, upscaling, window mode, sound and controls. Press **F1** in game for

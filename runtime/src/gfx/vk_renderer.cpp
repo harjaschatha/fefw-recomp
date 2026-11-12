@@ -910,8 +910,10 @@ void Renderer::end_frame(SubmitPrefix* prefix) {
     }
     bool present_ok = true;
     {
-        std::lock_guard<std::mutex> lk(s.dev->queue_mutex());
-        VkResult r = vkQueueSubmit2(s.dev->queue(), 1, &si, slot.fence);
+        std::unique_lock<std::mutex> lk(s.dev->queue_mutex(), std::defer_lock);
+        { NXFT("present.queue_lock"); lk.lock(); }
+        VkResult r;
+        { NXFT("present.queue_submit"); r = vkQueueSubmit2(s.dev->queue(), 1, &si, slot.fence); }
         if (r != VK_SUCCESS) {
             NXLOG_E(kTag, "vkQueueSubmit2 failed (%d)", static_cast<int>(r));
             if (r == VK_ERROR_DEVICE_LOST) device_lost("vkQueueSubmit2 (present)", r, s.st.frames);
@@ -951,7 +953,7 @@ void Renderer::end_frame(SubmitPrefix* prefix) {
                 pid.pPresentIds = &present_id;
                 pi.pNext = &pid;
             }
-            r = vkQueuePresentKHR(s.dev->queue(), &pi);
+            { NXFT("present.queue_present"); r = vkQueuePresentKHR(s.dev->queue(), &pi); }
             s.st.presents++;
             if (r == VK_ERROR_OUT_OF_DATE_KHR || r == VK_SUBOPTIMAL_KHR || r == VK_ERROR_SURFACE_LOST_KHR) {
                 s.dirty = true;

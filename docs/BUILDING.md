@@ -85,6 +85,10 @@ or one `NX_TOOLCHAIN` folder for the runtime (see `runtime\scripts\env.cmd`), an
 
 Runtime tests: `pwsh -File runtime\scripts\build.ps1 -Test`.
 
+For a runtime-only diagnostic patch for an existing Steam Deck installation, see
+[the Windows Deck patch build guide](../tools/deck/BUILD-WINDOWS.md). This build
+does not need a game dump or a rebuild of the launcher or generated game code.
+
 FSR 3 in a source build: put AMD's DLLs in `upscalers\fsr` next to `fefw.exe` or in the run folder (or name the folder in
 `[upscale] fsr_dll`): `amd_fidelityfx_upscaler_vk.dll` and `amd_fidelityfx_loader_vk.dll` from `Kits/FidelityFX/signedbin` of the
 [FSR SDK](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK) tag v2.4.0 for upscaling, and `amd_fidelityfx_vk.dll` from

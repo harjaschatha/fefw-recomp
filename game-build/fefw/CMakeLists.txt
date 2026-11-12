@@ -23,7 +23,8 @@ configure_file(src/fefw_paths.h.in "${CMAKE_CURRENT_BINARY_DIR}/fefw_paths.h" @O
 
 add_compile_options("-clang:-fmacro-prefix-map=${FEFW_ROOT}=.")
 set(FEFW_RUNTIME_DIR "${FEFW_ROOT}/runtime" CACHE PATH "runtime source tree compiled into fefw.exe")
-set(NXRT_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+option(FEFW_BUILD_RUNTIME_TESTS "Build runtime tests alongside the game/runtime DLL" OFF)
+set(NXRT_BUILD_TESTS ${FEFW_BUILD_RUNTIME_TESTS} CACHE BOOL "" FORCE)
 set(NXRT_GAMES "fefw" CACHE STRING "" FORCE)            # runtime/games/fefw only
 set(NXRT_RECOMP_INCLUDE "${FEFW_ROOT}/recomp/include" CACHE PATH "")
 # The ASTC transcoder: the ISPC build of tools/textures when it exists, else built from its sources (cmake/gfx.cmake). Only without

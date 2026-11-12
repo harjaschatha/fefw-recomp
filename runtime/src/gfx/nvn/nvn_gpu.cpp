@@ -531,10 +531,10 @@ void run_on_render_thread(const std::function<void()>& fn) {
     cv.wait(lk, [&] { return done; });
 }
 
-bool gpass_on() { return g && g->gpool != VK_NULL_HANDLE; }
+bool gpass_on() { return g && g->gpool != VK_NULL_HANDLE && ft::recording(); }
 
 void gpass_stamp(Frame& f, const char* label, uint32_t arg) {
-    if (!g || !g->gpool || !f.slot) return;
+    if (!gpass_on() || !f.slot) return;
     Slot& s = *static_cast<Slot*>(f.slot);
     if (s.gp_n >= kGpMax) return;
     vkCmdWriteTimestamp2(f.cb, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, g->gpool, static_cast<uint32_t>(&s - g->slots) * kGpMax + s.gp_n);

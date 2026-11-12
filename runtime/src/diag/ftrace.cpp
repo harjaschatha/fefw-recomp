@@ -52,6 +52,8 @@ size_t g_written = 0;
 size_t g_zones_written = 0;
 size_t g_threads_written = 0;
 bool g_started = false;
+uint64_t g_record_from_ns = 0;
+uint64_t g_record_until_ns = 0;   // zero: no end; immutable after g_on is published
 thread_local int t_index = -1;
 
 uint64_t qpc_freq() {
@@ -102,6 +104,12 @@ uint64_t now_ns() {
     return (q / f) * 1000000000ull + ((q % f) * 1000000000ull) / f;
 }
 
+bool recording() {
+    if (!on()) return false;
+    const uint64_t t = now_ns();
+    return t >= g_record_from_ns && (!g_record_until_ns || t < g_record_until_ns);
+}
+
 uint16_t zone_id(const char* name) {
     std::lock_guard<std::mutex> lk(g_mu);
     for (size_t i = 0; i < g_zone_names.size(); ++i)
@@ -111,7 +119,8 @@ uint16_t zone_id(const char* name) {
 }
 
 void event(uint16_t zone, uint64_t t0, uint64_t t1, uint32_t arg) {
-    if (!g_on.load(std::memory_order_relaxed)) return;
+    if (!g_on.load(std::memory_order_acquire)) return;
+    if (t0 < g_record_from_ns || (g_record_until_ns && t0 >= g_record_until_ns)) return;
     const size_t i = g_n.fetch_add(1, std::memory_order_relaxed);
     if (i >= g_cap) return;
     const int ti = thread_index();
@@ -231,6 +240,12 @@ void start_from_config() {
     if (!g_ev) return;
     g_file = std::fopen(path.c_str(), "wb");
     if (!g_file) { VirtualFree(g_ev, 0, MEM_RELEASE); g_ev = nullptr; return; }
+    // Leave loading out of the fixed event buffer. GPU pass timestamps use the same
+    // window, avoiding their pipeline drains outside the requested capture.
+    const double delay = std::clamp(config_get_double("prof", "delay_sec", 0.0), 0.0, 86400.0);
+    const double seconds = std::clamp(config_get_double("prof", "duration_sec", 0.0), 0.0, 86400.0);
+    g_record_from_ns = now_ns() + static_cast<uint64_t>(delay * 1e9);
+    g_record_until_ns = seconds > 0 ? g_record_from_ns + static_cast<uint64_t>(seconds * 1e9) : 0;
     g_started = true;
     g_on.store(true);
     g_writer = std::thread(writer_main);
@@ -239,6 +254,7 @@ void start_from_config() {
         g_sampler = std::thread(sampler_main, path + ".stacks");
     }
     NXLOG_I("prof", "frame trace on: %s (%zu events)", path.c_str(), g_cap);
+    NXLOG_I("prof", "trace window: delay %.1f s, duration %.1f s (0 = unlimited)", delay, seconds);
 }
 
 void stop() {
